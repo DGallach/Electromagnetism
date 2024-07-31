@@ -1,0 +1,42 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Constantes
+q = 1.0  # Carga de la partícula
+m = 1.0  # Masa de la partícula (suponemos masa unitaria para simplicidad)
+E = np.array([0, 1000, 0])  # Campo eléctrico en la dirección Y positiva
+B = np.array([0, 0, 1000])  # Campo magnético en la dirección Z positiva
+v0 = np.array([10, 0, 10])  # Velocidad inicial en la dirección X positiva
+r0 = np.array([0, 0, 0])  # Posición inicial
+
+# Parámetros de la simulación
+dt = 1e-4  # Paso de tiempo
+t_max = 0.1  # Tiempo máximo de simulación
+
+# Inicialización de variables
+t = np.arange(0, t_max, dt)
+num_steps = len(t)
+v = np.zeros((num_steps, 3))
+r = np.zeros((num_steps, 3))
+v[0] = v0
+r[0] = r0
+
+# Función para calcular la aceleración
+def acceleration(v, E, B, q, m):
+    return (q / m) * (E + np.cross(v, B))
+
+# Simulación de la trayectoria
+for i in range(1, num_steps):
+    a = acceleration(v[i-1], E, B, q, m)
+    v[i] = v[i-1] + a * dt
+    r[i] = r[i-1] + v[i-1] * dt
+
+# Graficar la trayectoria
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.plot(r[:, 0], r[:, 1], r[:, 2])
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+ax.set_title('Trayectoria de la Partícula')
+plt.show()
