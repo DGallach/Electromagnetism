@@ -1,0 +1,116 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Constantes del sistema
+k = 8.99e9  # Constante de Coulomb en N·m²/C²
+q_dipolo = 1e-6  # Carga del dipolo en C (microcoulomb)
+m = 1e-3  # Masa de la partícula en kg
+q_particula = 1e-6  # Carga de la partícula en C
+dt = 1e-4  # Paso de tiempo en segundos
+num_pasos = 10000  # Número de pasos de simulación
+
+# Posiciones de las cargas del dipolo
+pos_carga_positiva = np.array([0, 1])
+pos_carga_negativa = np.array([0, -1])
+
+# Posición inicial de la partícula
+pos_particula = np.array([0.5, 0.5])
+
+# Velocidad inicial de la partícula
+vel_particula = np.array([0.0, 0.0])
+
+# Función para calcular el campo eléctrico en un punto (x, y) debido a una carga puntual
+def campo_electrico(pos_particula, pos_carga, q):
+    r = pos_particula - pos_carga
+    distancia = np.linalg.norm(r)
+    if distancia == 0:
+        return np.array([0.0, 0.0])
+    E = k * q * r / distancia**3
+    return E
+
+# Vectores para almacenar la trayectoria de la partícula
+trayectoria_x = []
+trayectoria_y = []
+
+# Simulación temporal
+for paso in range(num_pasos):
+    # Calcular el campo eléctrico total en la posición de la partícula
+    E_total = np.array([0.0, 0.0])
+    
+    # Campo eléctrico debido a la carga positiva
+    E_total += campo_electrico(pos_particula, pos_carga_positiva, q_dipolo)
+    
+    # Campo eléctrico debido a la carga negativa
+    E_total += campo_electrico(pos_particula, pos_carga_negativa, -q_dipolo)
+    
+    # Calcular la fuerza eléctrica sobre la partícula: F = qE
+    F = q_particula * E_total
+    
+    # Calcular la aceleración: F = ma -> a = F/m
+    a = F / m
+    
+    # Actualizar la velocidad de la partícula: v = v + a * dt
+    vel_particula += a * dt
+    
+    # Actualizar la posición de la partícula: r = r + v * dt
+    pos_particula += vel_particula * dt
+    
+    # Almacenar la trayectoria
+    trayectoria_x.append(pos_particula[0])
+    trayectoria_y.append(pos_particula[1])
+
+# Crear una malla de puntos en el plano para calcular el campo eléctrico
+x_vals = np.linspace(-5, 5, 20)
+y_vals = np.linspace(-5, 5, 20)
+X, Y = np.meshgrid(x_vals, y_vals)
+
+# Crear matrices para los componentes del campo eléctrico en la malla
+E_x = np.zeros_like(X)
+E_y = np.zeros_like(Y)
+magnitud_E = np.zeros_like(X)
+
+# Calcular el campo eléctrico en cada punto de la malla
+for i in range(len(X)):
+    for j in range(len(Y)):
+        pos_punto = np.array([X[i, j], Y[i, j]])
+        E_total = np.array([0.0, 0.0])
+        # Campo eléctrico debido a la carga positiva
+        E_total += campo_electrico(pos_punto, pos_carga_positiva, q_dipolo)
+        # Campo eléctrico debido a la carga negativa
+        E_total += campo_electrico(pos_punto, pos_carga_negativa, -q_dipolo)
+        
+        # Descomponer el campo en componentes
+        E_x[i, j] = E_total[0]
+        E_y[i, j] = E_total[1]
+        
+        # Calcular la magnitud del campo en este punto
+        magnitud_E[i, j] = np.linalg.norm(E_total)
+
+# Normalizar los vectores del campo eléctrico para que todos tengan la misma longitud
+E_x_normalizado = E_x / magnitud_E
+E_y_normalizado = E_y / magnitud_E
+
+# Gráfica de la trayectoria de la partícula y el campo eléctrico
+plt.figure(figsize=(8, 8))
+
+# Dibujar las posiciones de las cargas del dipolo
+plt.plot(0, 1, 'ro', label='Carga +q')  # Carga positiva
+plt.plot(0, -1, 'bo', label='Carga -q')  # Carga negativa
+
+# Dibujar la trayectoria de la partícula
+plt.plot(trayectoria_x, trayectoria_y, 'g-', label='Trayectoria de la partícula')
+
+# Dibujar los vectores de campo eléctrico
+plt.quiver(X, Y, E_x_normalizado, E_y_normalizado, magnitud_E, cmap='plasma', scale=30, pivot='middle')
+
+# Configuración de la gráfica
+plt.title('Movimiento de una partícula cargada y campo eléctrico de un dipolo')
+plt.xlabel('x (m)')
+plt.ylabel('y (m)')
+plt.legend()
+plt.grid(True)
+plt.colorbar(label='Magnitud del campo eléctrico (N/C)')
+plt.axis('equal')
+
+# Mostrar la gráfica
+plt.show()
